@@ -16,34 +16,35 @@ export async function POST(request: NextRequest) {
       projectId,
       shotId,
       prompt,
-      model = 'kling' as VideoModel,
+      model = 'kling3' as VideoModel,
       duration = 5,
       aspectRatio = '16:9',
       imageUrl,
     } = body
 
-    if (!projectId || !prompt) {
+    if (!projectId || !prompt || !shotId) {
       return NextResponse.json(
-        { error: 'projectId and prompt are required' },
+        { error: 'projectId, shotId, and prompt are required' },
         { status: 400 }
       )
     }
 
-    // Create a job record
+    // Create a job record matching the generation_jobs schema
     const { data: job, error: jobError } = await supabase
       .from('generation_jobs')
       .insert({
         project_id: projectId,
-        shot_id: shotId || null,
+        shot_id: shotId,
         model,
-        prompt,
+        input_params: { prompt, duration, aspect_ratio: aspectRatio, image_url: imageUrl },
         status: 'queued',
-        user_id: user.id,
+        provider: 'fal',
       })
       .select()
       .single()
 
     if (jobError) {
+      console.error('Job insert error:', jobError)
       return NextResponse.json({ error: jobError.message }, { status: 500 })
     }
 
@@ -69,9 +70,8 @@ export async function POST(request: NextRequest) {
       .from('generation_jobs')
       .update({
         status: 'completed',
-        result_url: videoUrl,
+        result: { video_url: videoUrl, ...result.data },
         completed_at: new Date().toISOString(),
-        metadata: result.data,
       })
       .eq('id', job.id)
 
