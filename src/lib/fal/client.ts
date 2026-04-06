@@ -2,11 +2,12 @@ import { fal } from '@fal-ai/client'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
-export type VideoModel = 'veo3' | 'kling3' | 'sora2' | 'wan2' | 'hailuo' | 'ltx'
+export type VideoModel = 'veo3' | 'kling3' | 'kling' | 'sora2' | 'wan2' | 'hailuo' | 'ltx'
 
-export const MODEL_MAP: Record<VideoModel, { id: string; label: string; tier: string; bestFor: string }> = {
+export const MODEL_MAP: Record<string, { id: string; label: string; tier: string; bestFor: string }> = {
   veo3: { id: 'fal-ai/veo3', label: 'Veo 3.1', tier: 'premium', bestFor: 'Cinematic hero shots, product beauty shots' },
   kling3: { id: 'fal-ai/kling-video/v2.1/master', label: 'Kling 3 Pro', tier: 'standard', bestFor: 'Fluid motion, lifestyle scenes' },
+  kling: { id: 'fal-ai/kling-video/v2.1/master', label: 'Kling 3 Pro', tier: 'standard', bestFor: 'Fluid motion, lifestyle scenes' },
   sora2: { id: 'fal-ai/sora/v2', label: 'Sora 2 Pro', tier: 'premium', bestFor: 'Narrative sequences, complex scenes' },
   wan2: { id: 'fal-ai/wan/v2.2/1080p', label: 'Wan 2.2', tier: 'budget', bestFor: 'Quick drafts, ideation, batch generation' },
   hailuo: { id: 'fal-ai/hailuo/video-01-live', label: 'Hailuo 2.3', tier: 'standard', bestFor: 'Fast turnaround, social content' },
@@ -33,7 +34,7 @@ export async function generateVideo(params: {
   aspectRatio?: string
   imageUrl?: string
 }) {
-  const modelConfig = MODEL_MAP[params.model]
+  const modelConfig = MODEL_MAP[params.model] || MODEL_MAP['kling3']
   const input: any = {
     prompt: params.prompt,
     duration: params.duration || 5,
