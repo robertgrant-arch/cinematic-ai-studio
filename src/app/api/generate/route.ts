@@ -22,19 +22,19 @@ export async function POST(request: NextRequest) {
       imageUrl,
     } = body
 
-    if (!projectId || !prompt || !shotId) {
+    if (!projectId || !prompt) {
       return NextResponse.json(
-        { error: 'projectId, shotId, and prompt are required' },
+        { error: 'projectId and prompt are required' },
         { status: 400 }
       )
     }
 
-    // Create a job record matching the generation_jobs schema
+    // Create a job record
     const { data: job, error: jobError } = await supabase
       .from('generation_jobs')
       .insert({
         project_id: projectId,
-        shot_id: shotId,
+        shot_id: shotId || null,
         model,
         input_params: { prompt, duration, aspect_ratio: aspectRatio, image_url: imageUrl },
         status: 'queued',
