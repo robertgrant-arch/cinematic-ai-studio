@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, productName, productDescription, style, targetAudience } = body
+    const { name, description, productName, productDescription, style, targetAudience, model } = body
 
     if (!name) {
       return NextResponse.json({ error: 'Campaign name is required' }, { status: 400 })
@@ -53,13 +53,11 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         name,
-        description,
-        settings: {
-          productName,
-          productDescription,
-          style: style || 'cinematic',
-          targetAudience,
-        },
+        brief: description || '',
+        product_name: productName || '',
+        product_description: productDescription || '',
+        target_audience: targetAudience || '',
+        tone: style || 'cinematic',
       })
       .select()
       .single()
