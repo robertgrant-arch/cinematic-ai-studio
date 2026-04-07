@@ -1,26 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+function ok<T>(data: T, status = 200) {
+  return NextResponse.json({ ok: true, data, error: null }, { status })
+}
+function fail(code: string, message: string, status = 400) {
+  return NextResponse.json({ ok: false, data: null, error: { code, message } }, { status })
+}
+
+async function authenticate() {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return { supabase, user: null }
+  return { supabase, user }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { supabase, user } = await authenticate()
+    if (!user) return fail('UNAUTHORIZED', 'Authentication required', 401)
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    let body: any
+    try {
+      body = await request.json()
+    } catch {
+      return fail('INVALID_JSON', 'Request body must be valid JSON', 400)
     }
 
-    const { projectId, videoUrls: clientVideoUrls } = await request.json()
+    const { projectId, videoUrls: clientVideoUrls } = body
 
     if (!projectId) {
-      return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
+      return fail('VALIDATION_ERROR', 'projectId is required', 400)
     }
 
-    // Use video URLs passed from client (approved shots) or fetch from DB
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!project) return fail('NOT_FOUND', 'Project not found', 404)
+
+    // Use video URLs passed from client or fetch from DB
     let videoUrls = clientVideoUrls
 
     if (!videoUrls || videoUrls.length === 0) {
-      // Get all approved shots in order
       const { data: shots, error: shotsError } = await supabase
         .from('shots')
         .select('*')
@@ -29,11 +55,12 @@ export async function POST(request: NextRequest) {
         .order('order_index', { ascending: true })
 
       if (shotsError) {
-        return NextResponse.json({ error: shotsError.message }, { status: 500 })
+        console.error('[POST /api/stitch] Shots query error:', shotsError.message)
+        return fail('DB_ERROR', shotsError.message, 500)
       }
 
       if (!shots || shots.length === 0) {
-        return NextResponse.json({ error: 'No approved shots found' }, { status: 400 })
+        return fail('VALIDATION_ERROR', 'No approved shots found', 400)
       }
 
       videoUrls = shots
@@ -42,10 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!videoUrls || videoUrls.length < 2) {
-      return NextResponse.json(
-        { error: 'Need at least 2 approved shots with videos to stitch' },
-        { status: 400 }
-      )
+      return fail('VALIDATION_ERROR', 'Need at least 2 approved shots with videos to stitch', 400)
     }
 
     // Create an export record
@@ -61,14 +85,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (exportError) {
-      // Continue even if export record creation fails
-      console.error('Export record error:', exportError.message)
+      console.error('[POST /api/stitch] Export record error:', exportError.message)
     }
 
     // Call fal.ai ffmpeg merge-videos API
     const FAL_KEY = process.env.FAL_KEY
     if (!FAL_KEY) {
-      return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 })
+      return fail('CONFIG_ERROR', 'FAL_KEY not configured', 500)
     }
 
     const falResponse = await fetch('https://fal.run/fal-ai/ffmpeg-api/merge-videos', {
@@ -77,14 +100,16 @@ export async function POST(request: NextRequest) {
         'Authorization': `Key ${FAL_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        video_urls: videoUrls,
-      }),
+      body: JSON.stringify({ video_urls: videoUrls }),
     })
 
     if (!falResponse.ok) {
       const errText = await falResponse.text()
-      return NextResponse.json({ error: `Fal.ai error: ${errText}` }, { status: 500 })
+      console.error('[POST /api/stitch] Fal.ai error:', errText)
+      if (exportRecord) {
+        await supabase.from('exports').update({ status: 'failed' }).eq('id', exportRecord.id)
+      }
+      return fail('STITCH_ERROR', `Fal.ai error: ${errText}`, 500)
     }
 
     const falData = await falResponse.json() as any
@@ -92,22 +117,16 @@ export async function POST(request: NextRequest) {
 
     if (!mergedVideoUrl) {
       if (exportRecord) {
-        await supabase
-          .from('exports')
-          .update({ status: 'failed' })
-          .eq('id', exportRecord.id)
+        await supabase.from('exports').update({ status: 'failed' }).eq('id', exportRecord.id)
       }
-      return NextResponse.json({ error: 'Stitching failed - no output URL' }, { status: 500 })
+      return fail('STITCH_ERROR', 'Stitching failed - no output URL', 500)
     }
 
     // Update export with final video
     if (exportRecord) {
       await supabase
         .from('exports')
-        .update({
-          output_url: mergedVideoUrl,
-          status: 'completed',
-        })
+        .update({ output_url: mergedVideoUrl, status: 'completed' })
         .eq('id', exportRecord.id)
     }
 
@@ -117,17 +136,14 @@ export async function POST(request: NextRequest) {
       .update({ status: 'exported' })
       .eq('id', projectId)
 
-    return NextResponse.json({
+    return ok({
       exportId: exportRecord?.id,
       status: 'completed',
       videoUrl: mergedVideoUrl,
       shotCount: videoUrls.length,
     })
   } catch (error: any) {
-    console.error('Stitch error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Stitching failed' },
-      { status: 500 }
-    )
+    console.error('[POST /api/stitch] Unexpected:', error.message)
+    return fail('INTERNAL_ERROR', error.message || 'Stitching failed', 500)
   }
 }
