@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import type { ProjectStatus } from '@/lib/types'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -12,6 +13,16 @@ export default async function DashboardPage() {
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  const totalShots = 0
+  const totalExports = 0
+
+  async function signOut() {
+    'use server'
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+    redirect('/login')
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -31,7 +42,14 @@ export default async function DashboardPage() {
             <Link key={item.label} href={item.href} className={`block px-3 py-2 rounded-lg text-sm ${item.active ? 'bg-violet-600/20 text-violet-400' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}>{item.label}</Link>
           ))}
         </nav>
-        <div className="text-xs text-zinc-500 mt-auto">{user.email}</div>
+        <div className="mt-auto space-y-2">
+          <div className="text-xs text-zinc-500">{user.email}</div>
+          <form action={signOut}>
+            <button type="submit" className="text-xs text-zinc-500 hover:text-red-400 transition-colors">
+              Sign Out
+            </button>
+          </form>
+        </div>
       </aside>
       <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
@@ -42,7 +60,7 @@ export default async function DashboardPage() {
           <Link href="/campaign/new" className="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white text-sm font-medium">+ New Campaign</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {[{ label: 'Campaigns', value: projects?.length || 0 }, { label: 'Shots', value: 0 }, { label: 'Exports', value: 0 }, { label: 'Credits', value: '$0' }].map((s) => (
+          {[{ label: 'Campaigns', value: projects?.length || 0 }, { label: 'Shots', value: totalShots }, { label: 'Exports', value: totalExports }, { label: 'Credits', value: '$0' }].map((s) => (
             <div key={s.label} className="glass rounded-xl p-4"><p className="text-xs text-zinc-500">{s.label}</p><p className="text-2xl font-bold mt-1">{s.value}</p></div>
           ))}
         </div>
@@ -55,10 +73,11 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {projects.map((p: any) => (
-              <Link key={p.id} href={`/campaign/${p.id}`} className="glass rounded-xl p-5 hover:border-violet-600/50 transition">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{p.status || 'draft'}</span>
+              <Link key={p.id} href={`/campaign/${p.id}`} className="glass rounded-xl p-5 hover:border-violet-600/50 transition-all">
+                <span className={`text-xs px-2 py-0.5 rounded ${p.status === 'exported' ? 'bg-green-900 text-green-300' : p.status === 'in_progress' ? 'bg-blue-900 text-blue-300' : 'bg-zinc-800 text-zinc-400'}`}>{p.status || 'draft'}</span>
                 <h3 className="font-semibold mt-3 mb-1">{p.name}</h3>
-                <p className="text-sm text-zinc-400 line-clamp-2">{p.brief || 'No brief'}</p>
+                <p className="text-sm text-zinc-500 line-clamp-2">{p.brief || 'No brief'}</p>
+                <p className="text-xs text-zinc-600 mt-3">{new Date(p.created_at).toLocaleDateString()}</p>
               </Link>
             ))}
           </div>
