@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { type Shot, type Project, DEFAULT_SHOTS, SHOT_TYPES, CAMERA_MOVEMENTS } from '@/lib/types'
+import { type Shot, type Project, DEFAULT_SHOTS, SHOT_TYPES, CAMERA_MOVES } from '@/lib/types'
 
 export default function CampaignPage() {
   const params = useParams()
@@ -21,7 +21,6 @@ export default function CampaignPage() {
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load project
   useEffect(() => {
     if (!projectId) return
     const loadProject = async () => {
@@ -30,20 +29,14 @@ export default function CampaignPage() {
         setError(null)
         const res = await fetch(`/api/campaigns/${projectId}`)
         if (!res.ok) {
-          if (res.status === 404) {
-            setError('Campaign not found')
-            return
-          }
+          if (res.status === 404) { setError('Campaign not found'); return }
           throw new Error('Failed to load campaign')
         }
         const data = await res.json()
         if (data.ok && data.data) {
           setProject(data.data)
-          if (data.data.shots?.length > 0) {
-            setShots(data.data.shots)
-          } else {
-            setShots([...DEFAULT_SHOTS])
-          }
+          if (data.data.shots?.length > 0) setShots(data.data.shots)
+          else setShots([...DEFAULT_SHOTS])
         }
       } catch (err: any) {
         setError(err.message || 'Failed to load campaign')
@@ -68,8 +61,8 @@ export default function CampaignPage() {
       id: crypto.randomUUID(),
       order_index: shots.length,
       prompt: '',
-      shot_type: 'wide',
-      camera_movement: 'static',
+      shot_type: 'Hero Product Reveal',
+      camera_movement: 'Static Lock',
       duration: 5,
       status: 'draft',
       approval_status: 'pending',
@@ -96,7 +89,6 @@ export default function CampaignPage() {
     updateShot(index, 'status', 'draft')
   }
 
-  // Auto-save (debounced)
   const saveShots = useCallback(async (shotsToSave: Shot[]) => {
     setSaving(true)
     try {
@@ -188,12 +180,11 @@ export default function CampaignPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
       <header className="border-b border-white/10 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => router.push('/dashboard')} className="text-white/60 hover:text-white">&larr; Back</button>
-            <h1 className="text-xl font-bold">{project?.title || 'Campaign'}</h1>
+            <h1 className="text-xl font-bold">{project?.title || project?.name || 'Campaign'}</h1>
           </div>
           <div className="flex items-center gap-3">
             {saving && <span className="text-yellow-400 text-sm">Saving...</span>}
@@ -204,8 +195,6 @@ export default function CampaignPage() {
           </div>
         </div>
       </header>
-
-      {/* Actions Bar */}
       <div className="px-6 py-3 border-b border-white/10 flex items-center gap-3">
         <button onClick={addShot} className="px-3 py-1.5 bg-white/10 rounded text-sm hover:bg-white/20">+ Add Shot</button>
         <button onClick={generateAll} className="px-3 py-1.5 bg-blue-600 rounded text-sm hover:bg-blue-700">Generate All</button>
@@ -213,8 +202,6 @@ export default function CampaignPage() {
         {stitchError && <span className="text-red-400 text-sm">{stitchError}</span>}
         {finalVideoUrl && <a href={finalVideoUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 text-sm underline">Download Final Video</a>}
       </div>
-
-      {/* Shot List */}
       <div className="p-6 space-y-4">
         {shots.map((shot, index) => (
           <div key={shot.id || index} className="border border-white/10 rounded-lg p-4">
@@ -226,20 +213,16 @@ export default function CampaignPage() {
                     {SHOT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                   <select value={shot.camera_movement} onChange={e => updateShot(index, 'camera_movement', e.target.value)} className="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm">
-                    {CAMERA_MOVEMENTS.map(m => <option key={m} value={m}>{m}</option>)}
+                    {CAMERA_MOVES.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                   <input type="number" value={shot.duration} onChange={e => updateShot(index, 'duration', parseInt(e.target.value) || 5)} min={1} max={30} className="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm w-20" />
                   <span className="text-white/40 text-sm pt-1">sec</span>
                 </div>
                 <textarea value={shot.prompt} onChange={e => updateShot(index, 'prompt', e.target.value)} placeholder="Describe this shot..." rows={2} className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm resize-none" />
-                {shot.video_url && (
-                  <video src={shot.video_url} controls className="w-full max-w-md rounded" />
-                )}
+                {shot.video_url && <video src={shot.video_url} controls className="w-full max-w-md rounded" />}
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded ${shot.status === 'completed' ? 'bg-green-900 text-green-300' : shot.status === 'generating' ? 'bg-blue-900 text-blue-300' : shot.status === 'failed' ? 'bg-red-900 text-red-300' : 'bg-white/5 text-white/40'}`}>{shot.status}</span>
-                  {shot.approval_status !== 'pending' && (
-                    <span className={`text-xs px-2 py-0.5 rounded ${shot.approval_status === 'approved' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>{shot.approval_status}</span>
-                  )}
+                  {shot.approval_status !== 'pending' && <span className={`text-xs px-2 py-0.5 rounded ${shot.approval_status === 'approved' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>{shot.approval_status}</span>}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
