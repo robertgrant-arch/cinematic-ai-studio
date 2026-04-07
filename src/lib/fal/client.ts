@@ -6,12 +6,12 @@ export type VideoModel = 'veo3' | 'kling3' | 'kling' | 'sora2' | 'wan2' | 'hailu
 
 export const MODEL_MAP: Record<string, { id: string; label: string; tier: string; bestFor: string }> = {
   veo3: { id: 'fal-ai/veo3', label: 'Veo 3.1', tier: 'premium', bestFor: 'Cinematic hero shots, product beauty shots' },
-  kling3: { id: 'fal-ai/kling-video/v2.1/master', label: 'Kling 3 Pro', tier: 'standard', bestFor: 'Fluid motion, lifestyle scenes' },
-  kling: { id: 'fal-ai/kling-video/v2.1/master', label: 'Kling 3 Pro', tier: 'standard', bestFor: 'Fluid motion, lifestyle scenes' },
-  sora2: { id: 'fal-ai/sora/v2', label: 'Sora 2 Pro', tier: 'premium', bestFor: 'Narrative sequences, complex scenes' },
-  wan2: { id: 'fal-ai/wan/v2.2/1080p', label: 'Wan 2.2', tier: 'budget', bestFor: 'Quick drafts, ideation, batch generation' },
-  hailuo: { id: 'fal-ai/hailuo/video-01-live', label: 'Hailuo 2.3', tier: 'standard', bestFor: 'Fast turnaround, social content' },
-  ltx: { id: 'fal-ai/ltx-video/v0.9.7', label: 'LTX Video', tier: 'budget', bestFor: 'Rapid prototyping, animatics' },
+  kling3: { id: 'fal-ai/kling-video/v2.1/master/text-to-video', label: 'Kling 3 Pro', tier: 'standard', bestFor: 'Fluid motion, lifestyle scenes' },
+  kling: { id: 'fal-ai/kling-video/v2.1/master/text-to-video', label: 'Kling 3 Pro', tier: 'standard', bestFor: 'Fluid motion, lifestyle scenes' },
+  sora2: { id: 'fal-ai/sora-2/text-to-video', label: 'Sora 2 Pro', tier: 'premium', bestFor: 'Narrative sequences, complex scenes' },
+  wan2: { id: 'fal-ai/wan/v2.2-a14b/text-to-video', label: 'Wan 2.2', tier: 'budget', bestFor: 'Quick drafts, ideation, batch generation' },
+  hailuo: { id: 'fal-ai/minimax/hailuo-02/pro/text-to-video', label: 'Hailuo 2.3', tier: 'standard', bestFor: 'Fast turnaround, social content' },
+  ltx: { id: 'fal-ai/ltx-video-13b-distilled', label: 'LTX Video', tier: 'budget', bestFor: 'Rapid prototyping, animatics' },
 }
 
 export function selectModel(shotType: string): VideoModel {
@@ -40,6 +40,7 @@ export async function generateVideo(params: {
     duration: params.duration || 5,
     aspect_ratio: params.aspectRatio || '16:9',
   }
+
   if (params.imageUrl) input.image_url = params.imageUrl
 
   const result = await fal.subscribe(modelConfig.id, {
