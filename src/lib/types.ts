@@ -193,12 +193,12 @@ export interface CampaignFormData {
   targetAudience: string
   style: string
   model: string
-  spokesperson: SpokespersonConfig
-  voiceover: VoiceoverConfig
-  music: MusicConfig
-  transitionStyle: TransitionStyle
-  colorGrade: ColorGrade
-  aspectRatio: AspectRatio
+  spokesperson?: SpokespersonConfig
+  voiceover?: VoiceoverConfig
+  music?: MusicConfig
+  transitionStyle?: TransitionStyle
+  colorGrade?: ColorGrade
+  aspectRatio?: AspectRatio
 }
 
 // Style and model config
