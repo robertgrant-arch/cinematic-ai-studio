@@ -83,31 +83,20 @@ export async function PUT(
     }
 
     if (shots && Array.isArray(shots)) {
-      for (const shot of shots) {
-        if (shot.id) {
-          await supabase.from('shots').update({
-            shot_type: shot.shot_type,
-            prompt: shot.prompt,
-            duration: shot.duration,
-            camera_movement: shot.camera_movement,
-            video_url: shot.video_url,
-            status: shot.status,
-            approval_status: shot.approval_status,
-            order_index: shot.order_index,
-          }).eq('id', shot.id).eq('project_id', id)
-        } else {
-          await supabase.from('shots').insert({
-            project_id: id,
-            order_index: shot.order_index ?? 0,
-            shot_type: shot.shot_type || 'Hero Product Reveal',
-            prompt: shot.prompt || '',
-            duration: shot.duration || 5,
-            camera_movement: shot.camera_movement || 'Static Lock',
-            status: shot.status || 'draft',
-            approval_status: shot.approval_status || 'pending',
-          })
-        }
-      }
+      // Use upsert to handle both new and existing shots
+      const upsertData = shots.map((shot: any) => ({
+        id: shot.id || crypto.randomUUID(),
+        project_id: id,
+        order_index: shot.order_index ?? 0,
+        shot_type: shot.shot_type || 'Hero Product Reveal',
+        prompt: shot.prompt || '',
+        duration: shot.duration || 5,
+        camera_movement: shot.camera_movement || 'Static Lock',
+        video_url: shot.video_url || null,
+        status: shot.status || 'draft',
+        approval_status: shot.approval_status || 'pending',
+      }))
+      await supabase.from('shots').upsert(upsertData, { onConflict: 'id' })
     }
 
     const { data: updatedProject } = await supabase.from('projects').select('*').eq('id', id).single()
