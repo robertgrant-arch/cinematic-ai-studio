@@ -2,26 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-const STYLES = [
-  { id: 'cinematic', label: 'Cinematic', desc: 'Film-quality dramatic lighting and composition' },
-  { id: 'luxury', label: 'Luxury', desc: 'High-end premium aesthetic with elegant movement' },
-  { id: 'dynamic', label: 'Dynamic', desc: 'Fast-paced energetic cuts and motion' },
-  { id: 'minimal', label: 'Minimal', desc: 'Clean, simple, modern aesthetic' },
-  { id: 'editorial', label: 'Editorial', desc: 'Magazine-style storytelling approach' },
-]
-
-const MODELS = [
-  { id: 'kling', label: 'Kling 1.6', desc: 'Best for cinematic product shots' },
-  { id: 'veo', label: 'Google Veo 2', desc: 'Excellent photorealism and physics' },
-  { id: 'wan', label: 'Wan 2.1', desc: 'Great for artistic and stylized content' },
-  { id: 'hailuo', label: 'Hailuo Minimax', desc: 'Fast generation with good quality' },
-]
+import { STYLES, MODELS } from '@/lib/types'
+import type { CampaignFormData } from '@/lib/types'
 
 export default function NewCampaignPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState<CampaignFormData>({
     name: '',
     productName: '',
     productDescription: '',
@@ -34,18 +22,31 @@ export default function NewCampaignPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
+
     try {
       const res = await fetch('/api/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
+
       const data = await res.json()
-      if (data.project) {
-        router.push(`/campaign/${data.project.id}`)
+
+      if (!res.ok) {
+        setError(data.error?.message || data.error || 'Failed to create campaign')
+        return
       }
-    } catch (err) {
-      console.error(err)
+
+      const project = data.data?.project || data.project
+      if (project?.id) {
+        router.push(`/campaign/${project.id}`)
+      } else {
+        setError('Campaign created but no ID returned. Check the dashboard.')
+      }
+    } catch (err: any) {
+      console.error('Create campaign error:', err)
+      setError(err.message || 'Network error. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -61,15 +62,19 @@ export default function NewCampaignPage() {
           ← Back to Dashboard
         </button>
 
-        <h1 className="text-4xl font-bold mb-2">New Campaign</h1>
-        <p className="text-gray-400 mb-10">
-          Define your product and creative vision for cinematic commercial generation.
-        </p>
+        <h1 className="text-3xl font-bold mb-2">New Campaign</h1>
+        <p className="text-gray-400 mb-8">Define your product and creative vision for cinematic commercial generation.</p>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Campaign Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Campaign Name</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Campaign Name *</label>
             <input
               type="text"
               required
@@ -175,7 +180,7 @@ export default function NewCampaignPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !form.name}
+            disabled={loading || !form.name.trim()}
             className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-semibold text-lg hover:from-purple-500 hover:to-pink-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating Campaign...' : 'Create Campaign & Start Directing'}
