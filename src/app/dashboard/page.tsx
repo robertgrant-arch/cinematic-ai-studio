@@ -23,7 +23,7 @@ export default async function DashboardPage() {
         <nav className="space-y-1 flex-1">
           {[
             { label: 'Dashboard', href: '/dashboard', active: true },
-            { label: 'Campaigns', href: '/dashboard/campaigns' },
+            { label: 'Campaigns', href: '/dashboard' },
             { label: 'Brand Kit', href: '/dashboard/brand' },
             { label: 'Research', href: '/dashboard/research' },
             { label: 'Settings', href: '/dashboard/settings' },
@@ -33,32 +33,29 @@ export default async function DashboardPage() {
         </nav>
         <div className="text-xs text-zinc-500 mt-auto">{user.email}</div>
       </aside>
-
       <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-zinc-400 text-sm mt-1">Your cinematic commercial projects</p>
           </div>
-          <Link href="/dashboard/campaigns/new" className="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white text-sm font-medium">+ New Campaign</Link>
+          <Link href="/campaign/new" className="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white text-sm font-medium">+ New Campaign</Link>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {[{ label: 'Campaigns', value: projects?.length || 0 }, { label: 'Shots', value: 0 }, { label: 'Exports', value: 0 }, { label: 'Credits', value: '$0' }].map((s) => (
             <div key={s.label} className="glass rounded-xl p-4"><p className="text-xs text-zinc-500">{s.label}</p><p className="text-2xl font-bold mt-1">{s.value}</p></div>
           ))}
         </div>
-
         {!projects?.length ? (
           <div className="glass rounded-xl p-12 text-center">
             <h3 className="font-semibold text-lg mb-2">No campaigns yet</h3>
             <p className="text-zinc-400 text-sm mb-6">Create your first cinematic product commercial</p>
-            <Link href="/dashboard/campaigns/new" className="px-6 py-2 bg-violet-600 rounded-lg text-white text-sm font-medium">Create Campaign</Link>
+            <Link href="/campaign/new" className="px-6 py-2 bg-violet-600 rounded-lg text-white text-sm font-medium">Create Campaign</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {projects.map((p: any) => (
-              <Link key={p.id} href={`/dashboard/campaigns/${p.id}`} className="glass rounded-xl p-5 hover:border-violet-600/50 transition">
+              <Link key={p.id} href={`/campaign/${p.id}`} className="glass rounded-xl p-5 hover:border-violet-600/50 transition">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{p.status || 'draft'}</span>
                 <h3 className="font-semibold mt-3 mb-1">{p.name}</h3>
                 <p className="text-sm text-zinc-400 line-clamp-2">{p.brief || 'No brief'}</p>
