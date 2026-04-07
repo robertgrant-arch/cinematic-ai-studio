@@ -48,19 +48,9 @@ export default function CampaignEditorPage() {
   const [stitching, setStitching] = useState(false)
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null)
   const [stitchError, setStitchError] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (shots.length === 0) {
-      setShots([
-        { order_index: 0, shot_type: 'Hero Product Reveal', prompt: '', duration: 5, camera_movement: 'Slow Push In', status: 'draft', approval_status: 'pending' },
-        { order_index: 1, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Orbit 360', status: 'draft', approval_status: 'pending' },
-        { order_index: 2, shot_type: 'Lifestyle Context', prompt: '', duration: 5, camera_movement: 'Steadicam Walk', status: 'draft', approval_status: 'pending' },
-        { order_index: 3, shot_type: 'Dynamic Motion', prompt: '', duration: 5, camera_movement: 'Dolly Track', status: 'draft', approval_status: 'pending' },
-        { order_index: 4, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Rack Focus', status: 'draft', approval_status: 'pending' },
-        { order_index: 5, shot_type: 'Brand Logo Outro', prompt: '', duration: 5, camera_movement: 'Crane Up', status: 'draft', approval_status: 'pending' },
-      ])
-    }
-  }, [])
+  useEffect(() => {     const loadProject = async () => {       try {         const res = await fetch(`/api/campaigns/${projectId}`)         if (res.ok) {           const data = await res.json()           setProject(data.project)           if (data.shots && data.shots.length > 0) {             setShots(data.shots)           } else {             setShots([               { order_index: 0, shot_type: 'Hero Product Reveal', prompt: '', duration: 5, camera_movement: 'Slow Push In', status: 'draft', approval_status: 'pending' },               { order_index: 1, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Orbit 360', status: 'draft', approval_status: 'pending' },               { order_index: 2, shot_type: 'Lifestyle Context', prompt: '', duration: 5, camera_movement: 'Steadicam Walk', status: 'draft', approval_status: 'pending' },               { order_index: 3, shot_type: 'Dynamic Motion', prompt: '', duration: 5, camera_movement: 'Dolly Track', status: 'draft', approval_status: 'pending' },               { order_index: 4, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Rack Focus', status: 'draft', approval_status: 'pending' },               { order_index: 5, shot_type: 'Brand Logo Outro', prompt: '', duration: 5, camera_movement: 'Crane Up', status: 'draft', approval_status: 'pending' },             ])           }         } else {           setShots([             { order_index: 0, shot_type: 'Hero Product Reveal', prompt: '', duration: 5, camera_movement: 'Slow Push In', status: 'draft', approval_status: 'pending' },             { order_index: 1, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Orbit 360', status: 'draft', approval_status: 'pending' },             { order_index: 2, shot_type: 'Lifestyle Context', prompt: '', duration: 5, camera_movement: 'Steadicam Walk', status: 'draft', approval_status: 'pending' },             { order_index: 3, shot_type: 'Dynamic Motion', prompt: '', duration: 5, camera_movement: 'Dolly Track', status: 'draft', approval_status: 'pending' },             { order_index: 4, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Rack Focus', status: 'draft', approval_status: 'pending' },             { order_index: 5, shot_type: 'Brand Logo Outro', prompt: '', duration: 5, camera_movement: 'Crane Up', status: 'draft', approval_status: 'pending' },           ])         }       } catch (err) {         console.error('Failed to load project:', err)         setShots([           { order_index: 0, shot_type: 'Hero Product Reveal', prompt: '', duration: 5, camera_movement: 'Slow Push In', status: 'draft', approval_status: 'pending' },           { order_index: 1, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Orbit 360', status: 'draft', approval_status: 'pending' },           { order_index: 2, shot_type: 'Lifestyle Context', prompt: '', duration: 5, camera_movement: 'Steadicam Walk', status: 'draft', approval_status: 'pending' },           { order_index: 3, shot_type: 'Dynamic Motion', prompt: '', duration: 5, camera_movement: 'Dolly Track', status: 'draft', approval_status: 'pending' },           { order_index: 4, shot_type: 'Close-up Detail', prompt: '', duration: 5, camera_movement: 'Rack Focus', status: 'draft', approval_status: 'pending' },           { order_index: 5, shot_type: 'Brand Logo Outro', prompt: '', duration: 5, camera_movement: 'Crane Up', status: 'draft', approval_status: 'pending' },         ])       } finally {         setLoading(false)       }     }     loadProject()   }, [projectId])
 
   const updateShot = (index: number, field: keyof Shot, value: any) => {
     setShots(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
@@ -184,6 +174,7 @@ export default function CampaignEditorPage() {
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       {/* Top Bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          if (loading) { return (<div className="min-h-screen bg-gray-950 text-white flex items-center justify-center"><div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div><p className="text-zinc-400">Loading campaign...</p></div></div>) }
         <div className="flex items-center gap-4">
           <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-white">←</button>
           <h1 className="text-lg font-semibold">Campaign Editor</h1>
