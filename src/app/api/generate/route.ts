@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateVideo, VideoModel } from '@/lib/fal/client'
 
+// Allow up to 5 minutes for video generation
+export const maxDuration = 300
+
 // Consistent API response helpers
 function ok<T>(data: T, status = 200) {
   return NextResponse.json({ ok: true, data, error: null }, { status })
