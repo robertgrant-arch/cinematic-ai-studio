@@ -184,7 +184,7 @@ export default function CampaignPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => router.push('/dashboard')} className="text-white/60 hover:text-white">&larr; Back</button>
-            <h1 className="text-xl font-bold">{project?.title || project?.name || 'Campaign'}</h1>
+            <h1 className="text-xl font-bold">{project?.name || 'Campaign'}</h1>
           </div>
           <div className="flex items-center gap-3">
             {saving && <span className="text-yellow-400 text-sm">Saving...</span>}
