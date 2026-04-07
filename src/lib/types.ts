@@ -14,6 +14,13 @@ export interface Project {
   platforms: string[]
   status: ProjectStatus
   brand_kit: Record<string, any>
+  // New enterprise fields
+  spokesperson: SpokespersonConfig | null
+  voiceover: VoiceoverConfig | null
+  music: MusicConfig | null
+  transition_style: TransitionStyle
+  color_grade: ColorGrade
+  aspect_ratio: AspectRatio
   created_at: string
   updated_at: string
   // Computed (from API joins)
@@ -23,6 +30,44 @@ export interface Project {
 
 export type ProjectStatus = 'draft' | 'in_progress' | 'review' | 'exported' | 'archived'
 
+export interface SpokespersonConfig {
+  type: SpokespersonType
+  name: string | null
+  description: string | null
+  age_range: string | null
+  gender: string | null
+  ethnicity: string | null
+  attire: string | null
+  reference_image_url: string | null
+}
+
+export type SpokespersonType = 'none' | 'on_camera_talent' | 'voice_only' | 'animated_avatar' | 'ai_presenter'
+
+export interface VoiceoverConfig {
+  enabled: boolean
+  provider: 'elevenlabs' | 'google' | 'amazon' | 'none'
+  voice_id: string | null
+  script: string | null
+  tone: VoiceoverTone
+  speed: number
+}
+
+export type VoiceoverTone = 'warm' | 'authoritative' | 'friendly' | 'urgent' | 'calm' | 'professional'
+
+export interface MusicConfig {
+  enabled: boolean
+  style: MusicStyle
+  tempo: MusicTempo
+  custom_url: string | null
+  volume: number
+}
+
+export type MusicStyle = 'cinematic_orchestral' | 'corporate_uplifting' | 'emotional_piano' | 'modern_ambient' | 'energetic_pop' | 'dramatic_tension' | 'none'
+export type MusicTempo = 'slow' | 'medium' | 'fast'
+export type TransitionStyle = 'cut' | 'crossfade' | 'fade_to_black' | 'dissolve' | 'wipe' | 'zoom'
+export type ColorGrade = 'natural' | 'cinematic_warm' | 'cinematic_cool' | 'high_contrast' | 'desaturated' | 'vintage'
+export type AspectRatio = '16:9' | '9:16' | '1:1' | '4:5'
+
 export interface Shot {
   id?: string
   project_id?: string
@@ -30,6 +75,7 @@ export interface Shot {
   order_index: number
   shot_type: ShotType
   prompt: string
+  enhanced_prompt?: string | null
   negative_prompt?: string | null
   duration: number
   camera_movement: CameraMovement
@@ -38,6 +84,8 @@ export interface Shot {
   reference_image_url?: string | null
   model?: string
   model_params?: Record<string, any>
+  transition_in?: TransitionStyle
+  transition_out?: TransitionStyle
   status: ShotStatus
   approval_status: ApprovalStatus
   fal_request_id?: string | null
@@ -54,6 +102,12 @@ export type ShotType =
   | 'Unboxing Sequence'
   | 'Before/After'
   | 'Testimonial Setup'
+  | 'Spokesperson Intro'
+  | 'Problem Statement'
+  | 'Solution Reveal'
+  | 'Social Proof'
+  | 'Call to Action'
+  | 'Emotional Hook'
 
 export type CameraMovement =
   | 'Slow Push In'
@@ -64,6 +118,10 @@ export type CameraMovement =
   | 'Rack Focus'
   | 'Whip Pan'
   | 'Steadicam Walk'
+  | 'Aerial Drone'
+  | 'Dutch Angle'
+  | 'Pull Back Reveal'
+  | 'Handheld Intimate'
 
 export type ShotStatus = 'draft' | 'generating' | 'completed' | 'failed'
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
@@ -121,7 +179,7 @@ export interface Storyboard {
 }
 
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T> {
   ok: boolean
   data: T | null
   error: { code: string; message: string } | null
@@ -135,6 +193,12 @@ export interface CampaignFormData {
   targetAudience: string
   style: string
   model: string
+  spokesperson: SpokespersonConfig
+  voiceover: VoiceoverConfig
+  music: MusicConfig
+  transitionStyle: TransitionStyle
+  colorGrade: ColorGrade
+  aspectRatio: AspectRatio
 }
 
 // Style and model config
@@ -144,6 +208,8 @@ export const STYLES = [
   { id: 'dynamic', label: 'Dynamic', desc: 'Fast-paced energetic cuts and motion' },
   { id: 'minimal', label: 'Minimal', desc: 'Clean, simple, modern aesthetic' },
   { id: 'editorial', label: 'Editorial', desc: 'Magazine-style storytelling approach' },
+  { id: 'documentary', label: 'Documentary', desc: 'Authentic, raw, real-world feel' },
+  { id: 'broadcast', label: 'Broadcast TV', desc: 'Network television commercial quality' },
 ] as const
 
 export const MODELS = [
@@ -152,6 +218,51 @@ export const MODELS = [
   { id: 'wan', label: 'Wan 2.1', desc: 'Great for artistic and stylized content' },
   { id: 'hailuo', label: 'Hailuo Minimax', desc: 'Fast generation with good quality' },
 ] as const
+
+export const SPOKESPERSON_TYPES: { id: SpokespersonType; label: string; desc: string }[] = [
+  { id: 'none', label: 'No Spokesperson', desc: 'Product-focused visuals only' },
+  { id: 'on_camera_talent', label: 'On-Camera Talent', desc: 'AI-generated person speaking to camera' },
+  { id: 'voice_only', label: 'Voice Only', desc: 'Voiceover narration with product visuals' },
+  { id: 'animated_avatar', label: 'Animated Avatar', desc: 'Stylized animated character' },
+  { id: 'ai_presenter', label: 'AI Presenter', desc: 'Professional AI-generated presenter' },
+]
+
+export const VOICEOVER_TONES: { id: VoiceoverTone; label: string }[] = [
+  { id: 'warm', label: 'Warm & Reassuring' },
+  { id: 'authoritative', label: 'Authoritative & Trusted' },
+  { id: 'friendly', label: 'Friendly & Approachable' },
+  { id: 'urgent', label: 'Urgent & Compelling' },
+  { id: 'calm', label: 'Calm & Soothing' },
+  { id: 'professional', label: 'Professional & Polished' },
+]
+
+export const MUSIC_STYLES: { id: MusicStyle; label: string }[] = [
+  { id: 'cinematic_orchestral', label: 'Cinematic Orchestral' },
+  { id: 'corporate_uplifting', label: 'Corporate Uplifting' },
+  { id: 'emotional_piano', label: 'Emotional Piano' },
+  { id: 'modern_ambient', label: 'Modern Ambient' },
+  { id: 'energetic_pop', label: 'Energetic Pop' },
+  { id: 'dramatic_tension', label: 'Dramatic Tension' },
+  { id: 'none', label: 'No Music' },
+]
+
+export const TRANSITION_STYLES: { id: TransitionStyle; label: string }[] = [
+  { id: 'cut', label: 'Hard Cut' },
+  { id: 'crossfade', label: 'Crossfade' },
+  { id: 'fade_to_black', label: 'Fade to Black' },
+  { id: 'dissolve', label: 'Dissolve' },
+  { id: 'wipe', label: 'Wipe' },
+  { id: 'zoom', label: 'Zoom Transition' },
+]
+
+export const COLOR_GRADES: { id: ColorGrade; label: string }[] = [
+  { id: 'natural', label: 'Natural' },
+  { id: 'cinematic_warm', label: 'Cinematic Warm' },
+  { id: 'cinematic_cool', label: 'Cinematic Cool' },
+  { id: 'high_contrast', label: 'High Contrast' },
+  { id: 'desaturated', label: 'Desaturated' },
+  { id: 'vintage', label: 'Vintage Film' },
+]
 
 export const SHOT_TYPES: ShotType[] = [
   'Hero Product Reveal',
@@ -162,6 +273,12 @@ export const SHOT_TYPES: ShotType[] = [
   'Unboxing Sequence',
   'Before/After',
   'Testimonial Setup',
+  'Spokesperson Intro',
+  'Problem Statement',
+  'Solution Reveal',
+  'Social Proof',
+  'Call to Action',
+  'Emotional Hook',
 ]
 
 export const CAMERA_MOVES: CameraMovement[] = [
@@ -173,6 +290,10 @@ export const CAMERA_MOVES: CameraMovement[] = [
   'Rack Focus',
   'Whip Pan',
   'Steadicam Walk',
+  'Aerial Drone',
+  'Dutch Angle',
+  'Pull Back Reveal',
+  'Handheld Intimate',
 ]
 
 export const DEFAULT_SHOTS: Shot[] = [
