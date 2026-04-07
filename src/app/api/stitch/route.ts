@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       .update({ status: 'exported' })
       .eq('id', projectId)
 
-    return ok({
+    return NextResponse.json({
       exportId: exportRecord?.id,
       status: 'completed',
       videoUrl: mergedVideoUrl,
