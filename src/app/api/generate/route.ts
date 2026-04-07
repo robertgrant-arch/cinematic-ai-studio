@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         .eq('id', shotId)
     }
 
-    return ok({
+    return NextResponse.json({
       jobId: job.id,
       status: 'completed',
       videoUrl,
